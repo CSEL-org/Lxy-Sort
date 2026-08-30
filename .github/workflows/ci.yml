@@ -24,28 +24,45 @@ jobs:
           update: true
           install: mingw-w64-x86_64-gcc
 
-      - name: Build & run 6606 stress tests (Linux)
+      # ---- Linux: build, run the 6606 stress tests, build benchmark ----
+      - name: Build & run stress tests (Linux)
         if: runner.os == 'Linux'
         run: |
           g++ -O2 -std=c++17 -Wall -fopenmp stress.cpp -o stress
           ./stress
+      - name: Build benchmark (Linux)
+        if: runner.os == 'Linux'
+        run: g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench
 
-      - name: Build & run 6606 stress tests (Windows)
+      # ---- Windows: build, run the 6606 stress tests, build benchmark ----
+      - name: Build & run stress tests (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
           g++ -O2 -std=c++17 -Wall -fopenmp stress.cpp -o stress.exe
           ./stress.exe
-
-      - name: Build benchmark (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench
-          ./bench 20000 | tail -1
-
       - name: Build benchmark (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
-        run: |
-          g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench.exe
-          ./bench.exe 20000 | tail -1
+        run: g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench.exe
+
+      # Downloadable binaries. These are uploaded as CI *artifacts* and are NOT
+      # committed back to the repository — CI never creates a new commit, so the
+      # push -> build -> push loop you worried about cannot happen.
+      - name: Upload binaries (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lxysort-linux-binaries
+          path: |
+            stress
+            bench
+
+      - name: Upload binaries (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lxysort-windows-binaries
+          path: |
+            stress.exe
+            bench.exe
