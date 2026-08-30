@@ -157,6 +157,7 @@ jobs:
           g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench.exe
 
       - name: Attach binaries + header to Release
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.release-tag.outputs.tag }}
