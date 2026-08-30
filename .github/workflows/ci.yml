@@ -156,16 +156,24 @@ jobs:
           g++ -O2 -std=c++17 -fopenmp -mavx2 stress.cpp -o stress.exe
           g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench.exe
 
-      - name: Attach binaries + header to Release
+      - name: Attach binaries + header (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.release-tag.outputs.tag }}
-        run: |
-          set -e
-          files=""
-          for f in stress stress.exe stress-macos bench bench.exe bench-macos lxy_sort.hpp; do
-            [ -f "$f" ] && files="$files $f"
-          done
-          echo "Uploading to $TAG: $files"
-          gh release upload "$TAG" $files --clobber
+        run: gh release upload "$TAG" stress bench lxy_sort.hpp --clobber
+      - name: Attach binaries (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-tag.outputs.tag }}
+        run: gh release upload "$TAG" stress-macos bench-macos --clobber
+      - name: Attach binaries (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-tag.outputs.tag }}
+        run: gh release upload "$TAG" stress.exe bench.exe --clobber
