@@ -1,0 +1,13 @@
+# Normalize line endings and avoid noisy LF/CRLF warnings
+* text=auto
+
+# shell scripts must stay LF
+*.sh text eol=lf
+
+# batch files conventionally CRLF
+*.bat text eol=crlf
+
+# source files: keep LF in the repo
+*.hpp text eol=lf
+*.cpp text eol=lf
+*.md text eol=lf

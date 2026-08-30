@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSYS2 (Windows/g++)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: mingw-w64-x86_64-gcc
+
+      - name: Build & run 6606 stress tests (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          g++ -O2 -std=c++17 -Wall -fopenmp stress.cpp -o stress
+          ./stress
+
+      - name: Build & run 6606 stress tests (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          g++ -O2 -std=c++17 -Wall -fopenmp stress.cpp -o stress.exe
+          ./stress.exe
+
+      - name: Build benchmark (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench
+          ./bench 20000 | tail -1
+
+      - name: Build benchmark (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench.exe
+          ./bench.exe 20000 | tail -1
