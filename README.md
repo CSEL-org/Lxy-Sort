@@ -1,5 +1,11 @@
 # lxySort
 
+[![CI](https://github.com/MEMZ-CHROER/Lxy-Sort/actions/workflows/ci.yml/badge.svg)](https://github.com/MEMZ-CHROER/Lxy-Sort/actions)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)]()
+[![header-only](https://img.shields.io/badge/header--only-yes-brightgreen.svg)]()
+[![tests](https://img.shields.io/badge/stress-6606%20passed-brightgreen.svg)]()
+
 **A header-only, adaptive, high-performance sorting library for C++17.**
 
 `lxy_sort.hpp` is a single include-only header with **zero dependencies** (just the C++ standard library). It automatically picks the fastest algorithm for your data — and beats `std::sort` in the large majority of cases.

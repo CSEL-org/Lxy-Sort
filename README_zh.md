@@ -1,5 +1,11 @@
 # lxySort
 
+[![CI](https://github.com/MEMZ-CHROER/Lxy-Sort/actions/workflows/ci.yml/badge.svg)](https://github.com/MEMZ-CHROER/Lxy-Sort/actions)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)]()
+[![header-only](https://img.shields.io/badge/header--only-yes-brightgreen.svg)]()
+[![tests](https://img.shields.io/badge/stress-6606%20passed-brightgreen.svg)]()
+
 **一个 header-only、自适应、高性能的 C++17 排序库。**
 
 `lxy_sort.hpp` 是单头文件、即插即用、零第三方依赖（仅用 C++ 标准库）。它会根据你的数据自动挑选最快的算法——并且在大多数场景下**全面超越 `std::sort`**。
