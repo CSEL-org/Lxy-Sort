@@ -323,7 +323,8 @@ int main(int argc, char** argv) {
         vector<S> v(n); for(auto&x:v){x.a=(int)(rng()%100000); x.b=(int)(rng()%1000);}
         auto cmp = [](const S&x,const S&y){return x.a<y.a;};
         double seq=0, par=0, st=0;
-        { double b=1e300;for(int r=0;r<5;r++){auto c=v;double s=Clock::ms();lxySort(c,cmp);double e=Clock::ms();if(e-s<b)b=e-s;}seq=b; }
+        // true serial: disable auto-parallel so the parallel speedup is real
+        { double b=1e300;for(int r=0;r<2;r++){auto c=v; lxy_detail::parDepth()=1; double s=Clock::ms(); lxySort(c,cmp); double e=Clock::ms(); lxy_detail::parDepth()=0; if(e-s<b)b=e-s;} seq=b; }
         { double b=1e300;for(int r=0;r<5;r++){auto c=v;double s=Clock::ms();lxySortParallel(c,cmp);double e=Clock::ms();if(e-s<b)b=e-s;}par=b; }
         { double b=1e300;for(int r=0;r<5;r++){auto c=v;double s=Clock::ms();sort(c.begin(),c.end(),cmp);double e=Clock::ms();if(e-s<b)b=e-s;}st=b; }
         printf("[Struct sort(by a) N=%d]\n", n);

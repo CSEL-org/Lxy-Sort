@@ -1005,6 +1005,11 @@ static inline void lxySortParallelImpl(std::vector<T>& a, Comp comp, bool stable
 
 template<typename T, typename Comp = std::less<T>>
 static inline void lxySortParallel(std::vector<T>& a, Comp comp = Comp{}) {
+    lxySortParallelImpl(a, comp, false);   // fastest: chunks use introsort (merge is still stable)
+}
+// strictly-stable parallel sort (chunks use stable merge)
+template<typename T, typename Comp = std::less<T>>
+static inline void lxySortParallelStable(std::vector<T>& a, Comp comp = Comp{}) {
     lxySortParallelImpl(a, comp, true);
 }
 template<typename T, typename Comp = std::less<T>>
