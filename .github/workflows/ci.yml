@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [ master ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ master ]
 
@@ -66,3 +67,23 @@ jobs:
           path: |
             stress.exe
             bench.exe
+
+  # Publish compiled binaries as release assets when a tag (v*) is pushed.
+  # Release assets are attached to the GitHub Release, NOT committed back to the
+  # repo, so this does not create a new commit and cannot start a build loop.
+  release:
+    name: Build & publish release binaries
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build binaries
+        run: |
+          g++ -O2 -std=c++17 -fopenmp -mavx2 stress.cpp -o stress
+          g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench
+      - name: Attach binaries to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            stress
+            bench
