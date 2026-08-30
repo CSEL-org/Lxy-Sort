@@ -26,6 +26,7 @@ struct Clock { static double ms() {
 #include <random>
 #include <cstdio>
 #include <cstdlib>
+#include <climits>
 #include <functional>
 using namespace std;
 
