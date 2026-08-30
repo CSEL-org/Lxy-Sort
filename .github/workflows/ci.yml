@@ -78,11 +78,17 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Build binaries
+      - name: Install MinGW-w64 cross-compiler
+        run: sudo apt-get update && sudo apt-get install -y g++-mingw-w64-x86-64
+      - name: Build Windows binaries (cross-compiled, static)
+        run: |
+          x86_64-w64-mingw32-g++ -O2 -std=c++17 -static -fopenmp stress.cpp -o stress.exe
+          x86_64-w64-mingw32-g++ -O2 -std=c++17 -static -fopenmp bench.cpp -o bench.exe
+      - name: Build Linux binaries
         run: |
           g++ -O2 -std=c++17 -fopenmp -mavx2 stress.cpp -o stress
           g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench
-      - name: Auto tag + create release
+      - name: Auto tag + create release (Linux + Windows exe + header)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -94,6 +100,6 @@ jobs:
           fi
           gh api -X POST "repos/${{ github.repository }}/git/refs" \
             -f ref="refs/tags/$TAG" -f sha="${{ github.sha }}" 2>/dev/null || true
-          gh release create "$TAG" stress bench \
+          gh release create "$TAG" stress bench stress.exe bench.exe lxy_sort.hpp \
             --title "$TAG" \
-            --notes "Auto-generated release from commit \`${{ github.sha }}\`. Binaries: \`stress\`, \`bench\`."
+            --notes "Auto release from commit \`${{ github.sha }}\`.\n\n- Linux: \`stress\`, \`bench\`\n- Windows: \`stress.exe\`, \`bench.exe\` (static)\n- Header: \`lxy_sort.hpp\`"
