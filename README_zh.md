@@ -86,6 +86,122 @@ g++ -O2 -std=c++17 -fopenmp your.cpp -o your     # 启用并行
 
 ---
 
+## 全场景复杂度总表
+
+分派链：有序/逆序 `O(n)` → 小范围计数/位图 `O(n)` → 近似有序自然归并 `O(n·log runs)` → 宽范围 radix `O(n)` → 字符串 MSD radix `O(n·L)` → 通用比较 `O(n log n)`。
+
+### int（整数）
+
+| 场景 | 数据形态 | 算法 | 时间 | 空间 |
+|---|---|---|---|---|
+| Random 0..1e9 | 宽范围随机 | radix | **O(n)** | O(n) |
+| Random 0..999999 | 宽范围随机 | radix | **O(n)** | O(n) |
+| Random 0..999 | 小范围 | counting | **O(n)** | O(n) |
+| Random 0..99 | 小范围 | counting | **O(n)** | O(n) |
+| Duplicates 0..9 | 小范围 | counting | **O(n)** | O(n) |
+| Negative -100k..100k | 宽范围 | radix | **O(n)** | O(n) |
+| Mixed signs wide | 宽范围 | radix | **O(n)** | O(n) |
+| Ascending | 有序 | 早退 | **O(n)** | O(1) |
+| Ascending + repeats | 有序 | 早退 | **O(n)** | O(1) |
+| Descending | 逆序 | reverse | **O(n)** | O(1) |
+| Descending + repeats | 逆序 | reverse | **O(n)** | O(1) |
+| All same | 全同 | 早退 | **O(n)** | O(1) |
+| Nearly sorted (10 swaps) | range=n 无重复 | bitmap | **O(n)** | O(n/8) |
+| Nearly sorted (200 swaps) | range=n 无重复 | bitmap | **O(n)** | O(n/8) |
+| Nearly sorted wide-range | 近似有序 | 自然归并 | **O(n·log runs)** | O(n) |
+| Snake pattern | range=n 无重复 | bitmap | **O(n)** | O(n/8) |
+| Zigzag peak-valley | 小范围 | counting | **O(n)** | O(n) |
+| Rotated sorted | range=n 无重复 | bitmap | **O(n)** | O(n/8) |
+| Few distinct (0..2) | 小范围 | counting | **O(n)** | O(n) |
+| Random permutation 1..n | range=n 无重复 | bitmap | **O(n)** | O(n/8) |
+| 90% sorted + random tail | 宽范围 | radix | **O(n)** | O(n) |
+| Half sorted + random | 宽范围 | radix | **O(n)** | O(n) |
+| Descending (comparator) | 逆序 | reverse | **O(n)** | O(1) |
+| int32 full range | 宽范围 | radix | **O(n)** | O(n) |
+| **2 extremes (max dup)** | 仅 min/max | 二值填充 | **O(n)** | O(1) |
+| Organ-pipe | 小范围 | counting | **O(n)** | O(n) |
+| Exponential dist | 小范围 | counting | **O(n)** | O(n) |
+| INT_MIN/MAX/neg mix | 宽范围 | radix | **O(n)** | O(n) |
+| Bit-reversal 0..2^20 | 宽范围 | radix | **O(n)** | O(n) |
+
+### uint64 / int64（64 位 radix）
+
+| 场景 | 数据形态 | 算法 | 时间 | 空间 |
+|---|---|---|---|---|
+| uint64 Random | 宽范围 | 64 位 radix | **O(8n)=O(n)** | O(n) |
+| uint64 Ascending | 有序 | 早退 | **O(n)** | O(1) |
+| uint64 Descending | 逆序 | reverse | **O(n)** | O(1) |
+| int64 Random | 宽范围 | 64 位 radix | **O(8n)=O(n)** | O(n) |
+| int64 Mixed signs | 宽范围 | 64 位 radix | **O(8n)=O(n)** | O(n) |
+
+### double
+
+| 场景 | 数据形态 | 算法 | 时间 | 空间 |
+|---|---|---|---|---|
+| double Random wide | 宽范围 | radix | **O(n)** | O(n) |
+| double Random 0..999 | 浮点小范围 | radix | **O(n)** | O(n) |
+| double Ascending | 有序 | 早退 | **O(n)** | O(1) |
+| double Descending | 逆序 | reverse | **O(n)** | O(1) |
+| double Nearly sorted | 近似有序 | 自然归并 | **O(n·log runs)** | O(n) |
+| double All same | 全同 | 早退 | **O(n)** | O(1) |
+| double Mixed signs | 宽范围 | radix | **O(n)** | O(n) |
+
+### float
+
+| 场景 | 数据形态 | 算法 | 时间 | 空间 |
+|---|---|---|---|---|
+| float Random wide | 宽范围 | radix | **O(n)** | O(n) |
+| float Random 0..999 | 浮点小范围 | radix | **O(n)** | O(n) |
+| float Ascending | 有序 | 早退 | **O(n)** | O(1) |
+| float Descending | 逆序 | reverse | **O(n)** | O(1) |
+| float Mixed signs | 宽范围 | radix | **O(n)** | O(n) |
+| float All same | 全同 | 早退 | **O(n)** | O(1) |
+
+### string（字符串）
+
+| 场景 | 数据形态 | 算法 | 时间 | 空间 |
+|---|---|---|---|---|
+| string Random | 变长 | MSD radix | **O(n·L)** | O(n) |
+| string Ascending | 有序 | 早退 | **O(n)** | O(1) |
+| string Descending | 逆序 | reverse | **O(n)** | O(1) |
+| string Nearly sorted | 近似有序 | 自然归并 | **O(n·log runs)** | O(n) |
+| string Few distinct | 变长 | MSD radix | **O(n·L)** | O(n) |
+
+### 稳定 / byKey
+
+| 场景 | 数据形态 | 算法 | 时间 | 空间 |
+|---|---|---|---|---|
+| stable many-dup keys | 大量重复 | 半原地归并 | **O(n log n)** | O(n) |
+| stable near-sorted keys | 近似有序 | 自然归并 | **O(n·log runs)** | O(n) |
+| stable random keys | 随机 | 半原地归并 | **O(n log n)** | O(n) |
+| byKey int | 整型键 | 按键 radix | **O(n)** | O(n) |
+| byKey double | 浮点键 | 按键 radix | **O(n)** | O(n) |
+
+### 不同规模（Random 0..999999）
+
+| N | 算法 | 时间 | 空间 |
+|---|---|---|---|
+| N=16 | 插入排序 | **O(n²)** 最坏 / 常量 | O(1) |
+| N=17 | introsort | **O(n log n)** 平均 | O(log n) |
+| N=100 | introsort | **O(n log n)** 平均 | O(log n) |
+| N=128 | introsort | **O(n log n)** 平均 | O(log n) |
+| N=129 | introsort | **O(n log n)** 平均 | O(log n) |
+| N=1000 | radix | **O(n)** | O(n) |
+| N=10000 | radix | **O(n)** | O(n) |
+| N=100000 | radix | **O(n)** | O(n) |
+| N=1000000 | counting | **O(n)** | O(n) |
+
+### 并行
+
+| 场景 | 算法 | 时间 | 空间 |
+|---|---|---|---|
+| Struct sort(by a) N=1M | 分块排序 + 归并 | **O(n log n / P)** | O(n) |
+| Struct sort(by a) N=3M | 分块排序 + 归并 | **O(n log n / P)** | O(n) |
+
+**与 `std::sort` 的对比结论**：凡是能用“位模式/范围”线性化的数据（整数、浮点、小范围、字符串）都做到 **O(n)**；只有真正只能比较的通用类型才退到 **O(n log n)**（与 std 持平）。这正是 radix 4–7x、counting/bitmap 8–11x、Ascending 15x 提速的复杂度根源。
+
+---
+
 ## 诚实的边界
 
 1. **通用类型的稳定排序**（如随机 `std::string`）比 `std::sort` 的**非稳定** introsort 慢——这是稳定排序的本质代价（与 `std::stable_sort` 同理）。要快就用 `lxySortUnstable`。

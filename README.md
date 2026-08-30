@@ -86,6 +86,122 @@ Average/common cases run in **O(n)**; worst case **O(n log n)**; extra space **O
 
 ---
 
+## Full complexity breakdown (all bench scenarios)
+
+Dispatch: sorted/reversed `O(n)` → small-range counting/bitmap `O(n)` → nearly-sorted natural merge `O(n·log runs)` → wide-range radix `O(n)` → string MSD radix `O(n·L)` → generic comparison `O(n log n)`.
+
+### int
+
+| Scenario | Shape | Algorithm | Time | Space |
+|---|---|---|---|---|
+| Random 0..1e9 | wide-range random | radix | **O(n)** | O(n) |
+| Random 0..999999 | wide-range random | radix | **O(n)** | O(n) |
+| Random 0..999 | small range | counting | **O(n)** | O(n) |
+| Random 0..99 | small range | counting | **O(n)** | O(n) |
+| Duplicates 0..9 | small range | counting | **O(n)** | O(n) |
+| Negative -100k..100k | wide range | radix | **O(n)** | O(n) |
+| Mixed signs wide | wide range | radix | **O(n)** | O(n) |
+| Ascending | sorted | early exit | **O(n)** | O(1) |
+| Ascending + repeats | sorted | early exit | **O(n)** | O(1) |
+| Descending | reversed | reverse | **O(n)** | O(1) |
+| Descending + repeats | reversed | reverse | **O(n)** | O(1) |
+| All same | all same | early exit | **O(n)** | O(1) |
+| Nearly sorted (10 swaps) | range=n unique | bitmap | **O(n)** | O(n/8) |
+| Nearly sorted (200 swaps) | range=n unique | bitmap | **O(n)** | O(n/8) |
+| Nearly sorted wide-range | near-sorted | natural merge | **O(n·log runs)** | O(n) |
+| Snake pattern | range=n unique | bitmap | **O(n)** | O(n/8) |
+| Zigzag peak-valley | small range | counting | **O(n)** | O(n) |
+| Rotated sorted | range=n unique | bitmap | **O(n)** | O(n/8) |
+| Few distinct (0..2) | small range | counting | **O(n)** | O(n) |
+| Random permutation 1..n | range=n unique | bitmap | **O(n)** | O(n/8) |
+| 90% sorted + random tail | wide range | radix | **O(n)** | O(n) |
+| Half sorted + random | wide range | radix | **O(n)** | O(n) |
+| Descending (comparator) | reversed | reverse | **O(n)** | O(1) |
+| int32 full range | wide range | radix | **O(n)** | O(n) |
+| **2 extremes (max dup)** | only min/max | 2-value fill | **O(n)** | O(1) |
+| Organ-pipe | small range | counting | **O(n)** | O(n) |
+| Exponential dist | small range | counting | **O(n)** | O(n) |
+| INT_MIN/MAX/neg mix | wide range | radix | **O(n)** | O(n) |
+| Bit-reversal 0..2^20 | wide range | radix | **O(n)** | O(n) |
+
+### uint64 / int64 (64-bit radix)
+
+| Scenario | Shape | Algorithm | Time | Space |
+|---|---|---|---|---|
+| uint64 Random | wide range | 64-bit radix | **O(8n)=O(n)** | O(n) |
+| uint64 Ascending | sorted | early exit | **O(n)** | O(1) |
+| uint64 Descending | reversed | reverse | **O(n)** | O(1) |
+| int64 Random | wide range | 64-bit radix | **O(8n)=O(n)** | O(n) |
+| int64 Mixed signs | wide range | 64-bit radix | **O(8n)=O(n)** | O(n) |
+
+### double
+
+| Scenario | Shape | Algorithm | Time | Space |
+|---|---|---|---|---|
+| double Random wide | wide range | radix | **O(n)** | O(n) |
+| double Random 0..999 | FP small | radix | **O(n)** | O(n) |
+| double Ascending | sorted | early exit | **O(n)** | O(1) |
+| double Descending | reversed | reverse | **O(n)** | O(1) |
+| double Nearly sorted | near-sorted | natural merge | **O(n·log runs)** | O(n) |
+| double All same | all same | early exit | **O(n)** | O(1) |
+| double Mixed signs | wide range | radix | **O(n)** | O(n) |
+
+### float
+
+| Scenario | Shape | Algorithm | Time | Space |
+|---|---|---|---|---|
+| float Random wide | wide range | radix | **O(n)** | O(n) |
+| float Random 0..999 | FP small | radix | **O(n)** | O(n) |
+| float Ascending | sorted | early exit | **O(n)** | O(1) |
+| float Descending | reversed | reverse | **O(n)** | O(1) |
+| float Mixed signs | wide range | radix | **O(n)** | O(n) |
+| float All same | all same | early exit | **O(n)** | O(1) |
+
+### string
+
+| Scenario | Shape | Algorithm | Time | Space |
+|---|---|---|---|---|
+| string Random | variable-length | MSD radix | **O(n·L)** | O(n) |
+| string Ascending | sorted | early exit | **O(n)** | O(1) |
+| string Descending | reversed | reverse | **O(n)** | O(1) |
+| string Nearly sorted | near-sorted | natural merge | **O(n·log runs)** | O(n) |
+| string Few distinct | variable-length | MSD radix | **O(n·L)** | O(n) |
+
+### stable / byKey
+
+| Scenario | Shape | Algorithm | Time | Space |
+|---|---|---|---|---|
+| stable many-dup keys | many duplicates | half-in-place merge | **O(n log n)** | O(n) |
+| stable near-sorted keys | near-sorted | natural merge | **O(n·log runs)** | O(n) |
+| stable random keys | random | half-in-place merge | **O(n log n)** | O(n) |
+| byKey int | key int | radix by key | **O(n)** | O(n) |
+| byKey double | key double | radix by key | **O(n)** | O(n) |
+
+### Different sizes (Random 0..999999)
+
+| N | Algorithm | Time | Space |
+|---|---|---|---|
+| N=16 | insertion sort | **O(n²)** worst / const | O(1) |
+| N=17 | introsort | **O(n log n)** avg | O(log n) |
+| N=100 | introsort | **O(n log n)** avg | O(log n) |
+| N=128 | introsort | **O(n log n)** avg | O(log n) |
+| N=129 | introsort | **O(n log n)** avg | O(log n) |
+| N=1000 | radix | **O(n)** | O(n) |
+| N=10000 | radix | **O(n)** | O(n) |
+| N=100000 | radix | **O(n)** | O(n) |
+| N=1000000 | counting | **O(n)** | O(n) |
+
+### Parallel
+
+| Scenario | Algorithm | Time | Space |
+|---|---|---|---|
+| Struct sort(by a) N=1M | block sort + merge | **O(n log n / P)** | O(n) |
+| Struct sort(by a) N=3M | block sort + merge | **O(n log n / P)** | O(n) |
+
+**Bottom line vs `std::sort`:** every scenario whose data can be linearized (integers, floats, small ranges, strings) runs in **O(n)**; only truly comparison-only generic types fall back to **O(n log n)** (on par with `std`). This is the complexity source of the 4–7x (radix), 8–11x (counting/bitmap), and 15x (ascending) wins.
+
+---
+
 ## Honest limitations
 
 1. **Stable sort of generic types** (e.g. random `std::string`) is slower than `std::sort`'s *unstable* introsort — this is the intrinsic cost of stability (same as `std::stable_sort`). Use `lxySortUnstable` for speed.
