@@ -15,6 +15,7 @@ struct Clock { static double ms() {
 }};
 #else
 #include <chrono>
+using namespace std::chrono;
 struct Clock { static double ms() {
     return (double)duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count()/1e6;
 }};
