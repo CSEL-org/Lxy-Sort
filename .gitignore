@@ -1,0 +1,12 @@
+# build artifacts
+*.exe
+*.o
+*.obj
+*.zip
+*.lnk
+
+# pi session data
+.pi/
+
+# temp
+*.tmp
