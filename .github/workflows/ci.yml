@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     steps:
       - uses: actions/checkout@v4
 
@@ -28,6 +28,10 @@ jobs:
           update: true
           install: mingw-w64-x86_64-gcc
 
+      - name: Setup OpenMP (macOS)
+        if: runner.os == 'macOS'
+        run: brew install libomp
+
       - name: Build & run stress tests (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -36,6 +40,15 @@ jobs:
       - name: Build benchmark (Linux)
         if: runner.os == 'Linux'
         run: g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench
+
+      - name: Build & run stress tests (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          g++ -O2 -std=c++17 -Wall -Xpreprocessor -fopenmp -I"$(brew --prefix libomp)/include" -L"$(brew --prefix libomp)/lib" -lomp stress.cpp -o stress
+          ./stress
+      - name: Build benchmark (macOS)
+        if: runner.os == 'macOS'
+        run: g++ -O2 -std=c++17 -Xpreprocessor -fopenmp -I"$(brew --prefix libomp)/include" -L"$(brew --prefix libomp)/lib" -lomp bench.cpp -o bench
 
       - name: Build & run stress tests (Windows)
         if: runner.os == 'Windows'
@@ -57,6 +70,14 @@ jobs:
           path: |
             stress
             bench
+      - name: Upload binaries (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lxysort-macos-binaries
+          path: |
+            stress
+            bench
       - name: Upload binaries (Windows)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
@@ -66,33 +87,23 @@ jobs:
             stress.exe
             bench.exe
 
-  # Auto-release on every push to master: auto-tag + create a GitHub Release and
-  # attach compiled binaries. Release assets are NOT commits, so this cannot start
-  # a build loop; and because the workflow does not listen to tag pushes, the
-  # created tag itself does not retrigger anything.
-  release:
-    name: Auto tag & release
+  # ---- Auto tag + create an (initially empty) GitHub Release ----
+  release-tag:
+    name: Create version tag & release
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      tag: ${{ steps.rt.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install MinGW-w64 cross-compiler
-        run: sudo apt-get update && sudo apt-get install -y g++-mingw-w64-x86-64
-      - name: Build Windows binaries (cross-compiled, static)
-        run: |
-          x86_64-w64-mingw32-g++ -O2 -std=c++17 -static -fopenmp stress.cpp -o stress.exe
-          x86_64-w64-mingw32-g++ -O2 -std=c++17 -static -fopenmp bench.cpp -o bench.exe
-      - name: Build Linux binaries
-        run: |
-          g++ -O2 -std=c++17 -fopenmp -mavx2 stress.cpp -o stress
-          g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench
-      - name: Auto tag + create release (Linux + Windows exe + header)
+      - id: rt
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v1.0.${{ github.run_number }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Auto release tag: $TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "release $TAG already exists, skipping"
@@ -100,6 +111,60 @@ jobs:
           fi
           gh api -X POST "repos/${{ github.repository }}/git/refs" \
             -f ref="refs/tags/$TAG" -f sha="${{ github.sha }}" 2>/dev/null || true
-          gh release create "$TAG" stress bench stress.exe bench.exe lxy_sort.hpp \
-            --title "$TAG" \
-            --notes "Auto release from commit \`${{ github.sha }}\`.\n\n- Linux: \`stress\`, \`bench\`\n- Windows: \`stress.exe\`, \`bench.exe\` (static)\n- Header: \`lxy_sort.hpp\`"
+          gh release create "$TAG" --title "$TAG" \
+            --notes "Auto release from commit \`${{ github.sha }}\`."
+
+  # ---- Build on every OS and attach the binaries + header to the Release ----
+  release-build:
+    name: Build & attach release assets (${{ matrix.os }})
+    needs: release-tag
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSYS2 (Windows/g++)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: mingw-w64-x86_64-gcc
+      - name: Setup OpenMP (macOS)
+        if: runner.os == 'macOS'
+        run: brew install libomp
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          g++ -O2 -std=c++17 -fopenmp -mavx2 stress.cpp -o stress
+          g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench
+      - name: Build (macOS, arm64)
+        if: runner.os == 'macOS'
+        run: |
+          g++ -O2 -std=c++17 -Xpreprocessor -fopenmp -I"$(brew --prefix libomp)/include" -L"$(brew --prefix libomp)/lib" -lomp stress.cpp -o stress-macos
+          g++ -O2 -std=c++17 -Xpreprocessor -fopenmp -I"$(brew --prefix libomp)/include" -L"$(brew --prefix libomp)/lib" -lomp bench.cpp -o bench-macos
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          g++ -O2 -std=c++17 -fopenmp -mavx2 stress.cpp -o stress.exe
+          g++ -O2 -std=c++17 -fopenmp -mavx2 bench.cpp -o bench.exe
+
+      - name: Attach binaries + header to Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-tag.outputs.tag }}
+        run: |
+          set -e
+          files=""
+          for f in stress stress.exe stress-macos bench bench.exe bench-macos lxy_sort.hpp; do
+            [ -f "$f" ] && files="$files $f"
+          done
+          echo "Uploading to $TAG: $files"
+          gh release upload "$TAG" $files --clobber
